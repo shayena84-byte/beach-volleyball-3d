@@ -24,18 +24,19 @@ const phases = [
   {title:'Доводка и отход влево',badge:'СМЕНА ПОЗИЦИЙ',desc:'Мяч доводится вперёд, в «++». Нападающий отходит за левую боковую линию.',focus:'Игроки не пересекают путь друг друга: один идёт к мячу, второй освобождает пространство.'},
   {title:'Пасующий в зоне «++»',badge:'ТОЧКА ПЕРЕДАЧИ',desc:'Пасующий выходит под мяч ближе к сетке. Нападающий занимает точку старта разбега слева за площадкой.',focus:'«++» находится перед принимающим — это ориентир для качественной доводки.'},
   {title:'Высокая передача в зону 4',badge:'ВТОРОЕ КАСАНИЕ',desc:'Пасующий разворачивает корпус и взгляд к зоне 4, затем отправляет туда высокую передачу. Нападающий ещё готовится к разбегу.',focus:'Лицо пасующего и направление движения рук ориентированы к точке будущей атаки.'},
-  {title:'Прямой разбег',badge:'УСКОРЕНИЕ',desc:'Мяч поднимается по высокой дуге. Нападающий ускоряется по прямой из-за левой боковой линии.',focus:'Движение нападающего синхронизировано с полётом мяча, без забегания по дуге.'},
+  {title:'Определение точки съёма',badge:'ЧТЕНИЕ ПЕРЕДАЧИ',desc:'После паса нападающий ждёт в точке разгона за левой боковой линией, следит за полётом мяча и определяет, где и когда сможет его снять.',focus:'Сначала прочитать траекторию высокой передачи и выбрать точку удара; ноги согнуты и готовы к мощному старту.'},
+  {title:'Молниеносный разбег',badge:'ВЗРЫВНОЙ СТАРТ',desc:'Определив точку съёма, нападающий резко стартует с места и за короткое время проходит прямой коридор к зоне 4.',focus:'Взрывное ускорение после паузы, быстрые заключительные шаги лево–право–лево и своевременный прыжок.'},
   {title:'Синхронный удар',badge:'ТРЕТЬЕ КАСАНИЕ',desc:'Нападающий отталкивается двумя ногами, выводит ударную руку из положения «лук и стрела» и встречает мяч на максимальной высоте.',focus:'Контакт мяча с ладонью совпадает с завершающей фазой прыжка.'},
   {title:'Приземление и страховка',badge:'ЗАВЕРШЕНИЕ',desc:'После удара нападающий приземляется на обе ноги со сгибанием коленей, а пасующий занимает позицию для страховки.',focus:'Контролируемое приземление в песок и готовность к следующему действию.'},
 ];
 
 const plan = (x,z,y=0) => new THREE.Vector3((x-189)*8/262,y,(z-75)*8/236);
-const pathAttacker = [[103,272],[103,272],[25,227],[25,227],[25,227],[61,169],[90,114],[95,134]].map(p=>plan(...p));
-const pathSetter = [[266,268],[194,222],[156,181],[120,120],[120,120],[146,155],[156,184],[162,192]].map(p=>plan(...p));
+const pathAttacker = [[103,272],[103,272],[25,227],[25,227],[25,227],[25,227],[25,227],[90,114],[95,134]].map(p=>plan(...p));
+const pathSetter = [[266,268],[194,222],[156,181],[120,120],[120,120],[138,145],[146,155],[156,184],[162,192]].map(p=>plan(...p));
 const ballFirst = [[103,36,4.4],[103,240,.65],[112,176,3.0],[120,103,2.44],[120,103,2.44]];
 const plusPoint=plan(120,109), crossPoint=plan(194,222), attackPoint=plan(90,114), startPoint=plan(25,227);
-let progress=0, playing=false, speed=1, lastTime=performance.now(), renderer, scene, camera, controls, attackPlayer, setPlayer, ballMesh, ballShadow, travelRoutes, cameraPreset='isometric';
-const clockDuration=14;
+let progress=0, playing=false, speed=1, lastTime=performance.now(), renderer, scene, camera, controls, attackPlayer, setPlayer, ballMesh, ballShadow, travelRoutes, aimMarker, aimLine, cameraPreset='isometric';
+const clockDuration=16;
 const viewPositions={isometric:[13.1,14.6,16.5],top:[0.01,21.5,4.0],attack:[14.8,7.9,4.1]};
 let targetCamera=new THREE.Vector3(...viewPositions.isometric);
 let targetOrbit=new THREE.Vector3(0,.6,0);
@@ -43,8 +44,12 @@ let wheelInteraction=false;
 
 function mix(a,b,t){return a+(b-a)*t}
 function smooth(t){return t*t*(3-2*t)}
-function phasePosition(positions, phase){let i=Math.min(positions.length-2,Math.floor(phase));let f=Math.max(0,Math.min(1,phase-i));return positions[i].clone().lerp(positions[i+1],f)}
-function stageAt(p){return Math.min(7,Math.floor(p*7+0.001))}
+function phasePosition(positions, phase,burst=false){
+  let i=Math.min(positions.length-2,Math.floor(phase)),f=Math.max(0,Math.min(1,phase-i));
+  if(burst&&i===6) f=smoothBetween(phase,6.12,6.94);
+  return positions[i].clone().lerp(positions[i+1],f);
+}
+function stageAt(p){return Math.min(phases.length-1,Math.floor(p*phases.length+0.001))}
 function threeMaterial(color,roughness=0.83,metalness=0){return new THREE.MeshStandardMaterial({color,roughness,metalness})}
 function mesh(parent,geometry,material,x=0,y=0,z=0){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);parent.add(m);m.castShadow=true;m.receiveShadow=true;return m}
 function sphere(parent,r,material,x=0,y=0,z=0,detail=24){return mesh(parent,new THREE.SphereGeometry(r,detail,detail/2),material,x,y,z)}
@@ -172,8 +177,8 @@ function resize(){if(!renderer)return;const w=wrapper.clientWidth,h=wrapper.clie
 function interpolateBall(phase){
   if(phase<=4){let i=Math.min(3,Math.floor(phase)),f=Math.max(0,Math.min(1,phase-i));let p=ballFirst[i],q=ballFirst[i+1];return plan(mix(p[0],q[0],f),mix(p[1],q[1],f),mix(p[2],q[2],f))}
   const contact=new THREE.Vector3(attackPoint.x+.09,3.47,attackPoint.z-.40);
-  if(phase<=6){let u=(phase-4)/2;return new THREE.QuadraticBezierCurve3(new THREE.Vector3(plusPoint.x,2.44,plusPoint.z),new THREE.Vector3(-2.60,8.2,1.05),contact).getPoint(u)}
-  return new THREE.QuadraticBezierCurve3(contact,new THREE.Vector3(-2.3,3.3,-1.8),new THREE.Vector3(-1.25,1.02,-5.1)).getPoint(phase-6);
+  if(phase<=7){let u=(phase-4)/3;return new THREE.QuadraticBezierCurve3(new THREE.Vector3(plusPoint.x,2.44,plusPoint.z),new THREE.Vector3(-2.60,8.2,1.05),contact).getPoint(u)}
+  return new THREE.QuadraticBezierCurve3(contact,new THREE.Vector3(-2.3,3.3,-1.8),new THREE.Vector3(-1.25,1.02,-5.1)).getPoint(Math.min(1,phase-7));
 }
 function posePlayer(player,position,phase,role){
   const hitter=role==='attack',path=hitter?pathAttacker:pathSetter;
@@ -249,16 +254,16 @@ function posePlayer(player,position,phase,role){
   player.label.position.y=3.25+jump*.2;
 }
 
-function setProgress(p){progress=Math.max(0,Math.min(1,p));const phase=progress*7;timeline.value=Math.round(progress*1000);timeline.style.setProperty('--pct',`${progress*100}%`);const secs=Math.floor(progress*clockDuration);timeLabel.textContent=`00:${String(secs).padStart(2,'0')} / 00:14`;
-  let current=stageAt(progress);stageCounter.textContent=`ЭТАП ${String(current+1).padStart(2,'0')} / 08`;stageDuration.textContent=phases[current].badge;stageTitle.textContent=phases[current].title;stageDescription.textContent=phases[current].desc;stageFocus.textContent=phases[current].focus;
+function setProgress(p){progress=Math.max(0,Math.min(1,p));const phase=Math.min(8,progress*phases.length);timeline.value=Math.round(progress*1000);timeline.style.setProperty('--pct',`${progress*100}%`);const secs=Math.floor(progress*clockDuration);timeLabel.textContent=`00:${String(secs).padStart(2,'0')} / 00:16`;
+  let current=stageAt(progress);stageCounter.textContent=`ЭТАП ${String(current+1).padStart(2,'0')} / 09`;stageDuration.textContent=phases[current].badge;stageTitle.textContent=phases[current].title;stageDescription.textContent=phases[current].desc;stageFocus.textContent=phases[current].focus;
   stageTiles.forEach((el,i)=>{el.classList.toggle('selected',i===current);el.setAttribute('aria-pressed',String(i===current))});
-  if(attackPlayer){posePlayer(attackPlayer,phasePosition(pathAttacker,phase),phase,'attack');posePlayer(setPlayer,phasePosition(pathSetter,phase),phase,'set');ballMesh.position.copy(interpolateBall(phase));ballMesh.rotation.set(phase*.7,phase*1.1,phase*.38);ballShadow.position.set(ballMesh.position.x,.012,ballMesh.position.z);const s=1+ballMesh.position.y/4;ballShadow.scale.set(s,s,s);ballShadow.material.opacity=Math.max(.07,.27-ballMesh.position.y*.032)}
+  if(attackPlayer){posePlayer(attackPlayer,phasePosition(pathAttacker,phase,true),phase,'attack');posePlayer(setPlayer,phasePosition(pathSetter,phase),phase,'set');ballMesh.position.copy(interpolateBall(phase));ballMesh.rotation.set(phase*.7,phase*1.1,phase*.38);ballShadow.position.set(ballMesh.position.x,.012,ballMesh.position.z);const s=1+ballMesh.position.y/4;ballShadow.scale.set(s,s,s);ballShadow.material.opacity=Math.max(.07,.27-ballMesh.position.y*.032)}
 }
 function setPlaying(active){playing=active;playIcon.textContent=playing?'Ⅱ':'▶';playText.textContent=playing?'Пауза':'Воспроизвести';playButton.setAttribute('aria-label',playing?'Приостановить воспроизведение':'Запустить воспроизведение')}
 function view(name){cameraPreset=name;wheelInteraction=false;targetCamera.set(...viewPositions[name]);document.querySelectorAll('.camera-btn').forEach(el=>{const active=el.dataset.view===name;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active))})}
 function animate(now){requestAnimationFrame(animate);const delta=Math.min(.08,(now-lastTime)/1000);lastTime=now;if(playing){let n=progress+delta*speed/clockDuration;if(n>=1){n=1;setPlaying(false)}setProgress(n)}
   if(renderer){if(!wheelInteraction){camera.position.lerp(targetCamera,.05);controls.target.lerp(targetOrbit,.05)}controls.update();renderer.render(scene,camera)}}
-function initEvents(){timeline.addEventListener('input',e=>{setPlaying(false);setProgress(+e.target.value/1000)});playButton.addEventListener('click',()=>{if(progress>=1)setProgress(0);setPlaying(!playing)});document.querySelector('#backBtn').addEventListener('click',()=>{setPlaying(false);setProgress(Math.max(0,(Math.ceil(progress*7-.001)-1)/7))});document.querySelector('#nextBtn').addEventListener('click',()=>{setPlaying(false);setProgress(Math.min(1,(Math.floor(progress*7+.001)+1)/7))});document.querySelector('#speed').addEventListener('change',e=>{speed=Number(e.target.value)});stageTiles.forEach(b=>b.addEventListener('click',()=>{setPlaying(false);setProgress(+b.dataset.stage/7)}));document.querySelectorAll('.camera-btn').forEach(b=>b.addEventListener('click',()=>view(b.dataset.view)));routesToggle.addEventListener('change',()=>{if(travelRoutes)travelRoutes.visible=routesToggle.checked});const help=document.querySelector('#helpDialog');document.querySelector('#helpButton').addEventListener('click',()=>help.showModal());document.querySelector('#closeHelp').addEventListener('click',()=>help.close());document.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)||help.open)return;if(e.code==='Space'){e.preventDefault();if(progress>=1)setProgress(0);setPlaying(!playing)}if(e.code==='ArrowRight'){e.preventDefault();setPlaying(false);setProgress(Math.min(1,(Math.floor(progress*7+.001)+1)/7))}if(e.code==='ArrowLeft'){e.preventDefault();setPlaying(false);setProgress(Math.max(0,(Math.ceil(progress*7-.001)-1)/7))}});document.addEventListener('visibilitychange',()=>{if(document.hidden)setPlaying(false)})}
+function initEvents(){timeline.addEventListener('input',e=>{setPlaying(false);setProgress(+e.target.value/1000)});playButton.addEventListener('click',()=>{if(progress>=1)setProgress(0);setPlaying(!playing)});document.querySelector('#backBtn').addEventListener('click',()=>{setPlaying(false);setProgress(Math.max(0,(Math.ceil(progress*phases.length-.001)-1)/phases.length))});document.querySelector('#nextBtn').addEventListener('click',()=>{setPlaying(false);setProgress(Math.min(1,(Math.floor(progress*phases.length+.001)+1)/phases.length))});document.querySelector('#speed').addEventListener('change',e=>{speed=Number(e.target.value)});stageTiles.forEach(b=>b.addEventListener('click',()=>{setPlaying(false);setProgress(+b.dataset.stage/phases.length)}));document.querySelectorAll('.camera-btn').forEach(b=>b.addEventListener('click',()=>view(b.dataset.view)));routesToggle.addEventListener('change',()=>{if(travelRoutes)travelRoutes.visible=routesToggle.checked});const help=document.querySelector('#helpDialog');document.querySelector('#helpButton').addEventListener('click',()=>help.showModal());document.querySelector('#closeHelp').addEventListener('click',()=>help.close());document.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)||help.open)return;if(e.code==='Space'){e.preventDefault();if(progress>=1)setProgress(0);setPlaying(!playing)}if(e.code==='ArrowRight'){e.preventDefault();setPlaying(false);setProgress(Math.min(1,(Math.floor(progress*phases.length+.001)+1)/phases.length))}if(e.code==='ArrowLeft'){e.preventDefault();setPlaying(false);setProgress(Math.max(0,(Math.ceil(progress*phases.length-.001)-1)/phases.length))}});document.addEventListener('visibilitychange',()=>{if(document.hidden)setPlaying(false)})}
 
 initEvents();
 try{buildScene();requestAnimationFrame(animate)}catch(err){console.error('Failed to initialize 3D scene',err);loading.style.display='none';errorBox.hidden=false}
