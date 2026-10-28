@@ -86,12 +86,14 @@ function createPlayer({shirt,shorts,skin,hair,accent,name,number}){
   sphere(body,.32,bottom,0,1.05,0);
   const shirtMesh=sphere(body,.39,top,0,1.57,0);shirtMesh.scale.set(1,1.09,.74);
   sphere(body,.145,skinMat,0,2.02,0);
-  sphere(body,.31,skinMat,0,2.27,0);
-  const hairCap=sphere(body,.315,dark,0,2.42,.07);hairCap.scale.y=.52;
-  for(const offset of [-.20,0,.20])sphere(body,.109,dark,offset,2.48,-.14);
-  sphere(body,.050,skinMat,0,2.23,-.304);
-  for(const side of [-1,1]){sphere(body,.046,eye,.124*side,2.31,-.276);sphere(body,.054,skinMat,.293*side,2.25,0)}
-  const smile=new THREE.Mesh(new THREE.TorusGeometry(.085,.008,4,20,Math.PI),new THREE.MeshBasicMaterial({color:'#994e42'}));smile.rotation.x=Math.PI;smile.position.set(0,2.19,-.29);body.add(smile);
+  // Independent neck pivot for tracking the ball during the new reading phase.
+  const head=new THREE.Group();head.position.y=2.06;body.add(head);
+  sphere(head,.31,skinMat,0,.21,0);
+  const hairCap=sphere(head,.315,dark,0,.36,.07);hairCap.scale.y=.52;
+  for(const offset of [-.20,0,.20])sphere(head,.109,dark,offset,.42,-.14);
+  sphere(head,.050,skinMat,0,.17,-.304);
+  for(const side of [-1,1]){sphere(head,.046,eye,.124*side,.25,-.276);sphere(head,.054,skinMat,.293*side,.19,0)}
+  const smile=new THREE.Mesh(new THREE.TorusGeometry(.085,.008,4,20,Math.PI),new THREE.MeshBasicMaterial({color:'#994e42'}));smile.rotation.x=Math.PI;smile.position.set(0,.13,-.29);head.add(smile);
   const chest=new THREE.Mesh(new THREE.CircleGeometry(.13,24),white);chest.position.set(0,1.66,-.307);body.add(chest);
   const print=makeNameSprite(number,'#00000000');print.scale.set(.23,.19,1);print.position.set(0,1.66,-.32);body.add(print);
   const arms=[],legs=[];
@@ -108,7 +110,7 @@ function createPlayer({shirt,shorts,skin,hair,accent,name,number}){
   // A visible joined-hands silhouette reinforces the low bump technique.
   const clasp=sphere(body,.116,skinMat,0,1.18,-.83);clasp.scale.set(1.15,.7,1.0);clasp.visible=false;
   const label=makeNameSprite(name,accent);label.position.set(0,3.25,0);root.add(label);
-  return {root,body,arms,legs,label,clasp,role:name};
+  return {root,body,head,arms,legs,label,clasp,role:name};
 }
 function clamp01(x){return Math.min(1,Math.max(0,x))}
 function smoothBetween(x,a,b){return smooth(clamp01((x-a)/(b-a)))}
@@ -167,6 +169,16 @@ function buildScene(){
   ring(plusPoint,.58,'#48ad89');ring(crossPoint,.52,'#43a5d7');ring(startPoint,.44,'#dd8b57');floorLabel('++','#2b9a76',plusPoint);floorLabel('×','#208aaa',crossPoint);
   attackPlayer=createPlayer({shirt:'#e87946',shorts:'#293e43',skin:'#e5b28c',hair:'#49392e',accent:'#d8784a',name:'НАПАДАЮЩИЙ',number:'7'});
   setPlayer=createPlayer({shirt:'#2795bc',shorts:'#224455',skin:'#f0c29b',hair:'#634638',accent:'#2c94b9',name:'ПАСУЮЩИЙ',number:'2'});
+  // Mark the chosen contact point only while the attacker reads the set.
+  const contact=new THREE.Vector3(attackPoint.x+.09,3.47,attackPoint.z-.40);
+  aimMarker=new THREE.Group();aimMarker.position.copy(contact);
+  const ringTarget=new THREE.Mesh(new THREE.TorusGeometry(.30,.028,8,50),new THREE.MeshBasicMaterial({color:'#f0a02f',depthTest:false}));
+  ringTarget.rotation.x=Math.PI/2;aimMarker.add(ringTarget);
+  aimMarker.add(new THREE.Mesh(new THREE.SphereGeometry(.07,14,10),new THREE.MeshBasicMaterial({color:'#f0a02f',depthTest:false})));
+  aimMarker.visible=false;scene.add(aimMarker);
+  aimLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([startPoint.clone(),contact]),
+    new THREE.LineDashedMaterial({color:'#d78934',dashSize:.16,gapSize:.12,transparent:true,opacity:.85,depthTest:false}));
+  aimLine.computeLineDistances();aimLine.visible=false;scene.add(aimLine);
   const realisticTexture=makeBallTexture();const bumpTex=makeBallBumpTexture();ballMesh=mesh(scene,new THREE.SphereGeometry(.205,64,48),new THREE.MeshStandardMaterial({map:realisticTexture,bumpMap:bumpTex,bumpScale:.012,roughness:.76,metalness:0}),0,2,0);ballMesh.castShadow=true;
   ballShadow=mesh(scene,new THREE.CircleGeometry(.24,36),new THREE.MeshBasicMaterial({color:'#48584b',transparent:true,opacity:.23,depthWrite:false}),0,.013,0);ballShadow.rotation.x=-Math.PI/2;ballShadow.castShadow=false;
   resize();new ResizeObserver(resize).observe(wrapper);setProgress(0);loading.style.display='none';
@@ -183,8 +195,8 @@ function interpolateBall(phase){
 function posePlayer(player,position,phase,role){
   const hitter=role==='attack',path=hitter?pathAttacker:pathSetter;
   player.root.position.copy(position);
-  const i=Math.min(6,Math.floor(phase));const advance=path[i+1].clone().sub(path[i]);
-  const running=hitter?(phase>1.18&&phase<2.95)||(phase>4.36&&phase<5.77):(phase<.96)||(phase>1.45&&phase<3.12)||(phase>4.15&&phase<5.5);
+  const i=Math.min(path.length-2,Math.floor(phase));const advance=path[i+1].clone().sub(path[i]);
+  const running=hitter?(phase>1.18&&phase<2.95)||(phase>6.12&&phase<6.90):(phase<.96)||(phase>1.45&&phase<3.12)||(phase>4.15&&phase<5.5);
   // The model's eyes face LOCAL -Z. Under a positive Y rotation, -Z points
   // toward NEGATIVE world X: atan2(-dx,-dz), not atan2(dx,-dz).
   const heading=advance.lengthSq()>.005?Math.atan2(-advance.x,-advance.z):0;
@@ -200,26 +212,32 @@ function posePlayer(player,position,phase,role){
   const setterFacing=phase<2.78?heading:
     phase<3.25?rotateToward(approachFace,setterFace,smoothBetween(phase,2.78,3.25)):
     phase<4.38?setterFace:rotateToward(setterFace,coverFace,smoothBetween(phase,4.38,4.80));
-  const face=hitter?(phase<1.22?0:phase<3.15?heading:phase<4.4?0:heading):setterFacing;
-  player.root.rotation.y=face;
-  const runCycle=Math.sin(phase*(hitter?16.2:13.5));
-  const runIntensity=running?(hitter&&phase>4.36?Math.min(1,.38+(phase-4.36)*.48):.78):0;
+  const aimDirection=attackPoint.clone().sub(startPoint);
+  const aimHeading=Math.atan2(-aimDirection.x,-aimDirection.z);
+  const hitterFace=phase<1.22?0:phase<3.15?heading:
+    phase<4.86?rotateToward(0,aimHeading,smoothBetween(phase,4.44,4.86)):aimHeading;
+  player.root.rotation.y=hitter?hitterFace:setterFacing;
+  // One hesitating ready stance followed by three quick approach steps.
+  const runCycle=hitter&&phase>=6?Math.sin((phase-6)*Math.PI*3):Math.sin(phase*(hitter?16.2:13.5));
+  const runIntensity=running?(hitter&&phase>6?Math.min(1,.32+(phase-6.12)*1.13):.78):0;
+  const reading=hitter?smoothBetween(phase,4.9,5.1)*(1-smoothBetween(phase,6.05,6.3)):0;
+  if(player.head){player.head.rotation.x=reading*(.19+.075*Math.sin((phase-5)*1.4));player.head.rotation.y=reading*(Math.sin((phase-5)*1.4)*.15)}
   // The receiver is already low BEFORE impact and remains low through touch.
   const passDip=hitter?(1-smoothBetween(phase,1.08,1.38))*smoothBetween(phase,.21,.80):0;
   const setterDip=!hitter?smoothBetween(phase,2.7,3.3)*(1-smoothBetween(phase,3.92,4.18)):.0;
-  const plantDip=hitter?smoothBetween(phase,5.43,5.65)*(1-smoothBetween(phase,5.73,5.86))*.27:0;
-  const landingDip=hitter?smoothBetween(phase,6.55,6.87)*.17:0;
-  const crouch=passDip*.40+setterDip*.22+plantDip+landingDip;
-  const jump=hitter?(smoothBetween(phase,5.67,5.93)*.68*(1-smoothBetween(phase,6.10,6.96))):0;
+  const plantDip=hitter?smoothBetween(phase,6.72,6.88)*(1-smoothBetween(phase,6.96,7.04))*.27:0;
+  const landingDip=hitter?smoothBetween(phase,7.55,7.87)*.17:0;
+  const crouch=passDip*.40+setterDip*.22+plantDip+landingDip+reading*.12;
+  const jump=hitter?(smoothBetween(phase,6.80,6.96)*.68*(1-smoothBetween(phase,7.22,7.88))):0;
   player.root.position.y=jump+(running?Math.abs(runCycle)*.035:0);
   player.body.position.y=-crouch;
   player.body.rotation.x=hitter?(-.045-passDip*.20-plantDip*.24):(-setterDip*.07);
-  player.body.rotation.z=hitter&&phase>5.75&&phase<6.30?-.055:0;
-  // Three accelerating steps (left–right–left), two-foot plant and sand-absorbing landing.
-  const feetSpread=hitter&&phase>=5.53&&phase<5.81?.35:(hitter?.20+passDip*.13:.20);
+  player.body.rotation.z=hitter&&phase>6.84&&phase<7.31?-.055:0;
+  // Three accelerating steps (left–right–left), two-foot plant and soft landing.
+  const feetSpread=hitter&&phase>=6.74&&phase<6.94?.35:(hitter?.20+passDip*.13+reading*.07:.20);
   const stride=runIntensity*runCycle*.32;
   player.legs.forEach(leg=>{
-    const sign=leg.sign,footZ=runIntensity?(-sign*stride): (hitter&&phase>5.55&&phase<5.78?(sign>0?.30:-.15):.05);
+    const sign=leg.sign,footZ=runIntensity?(-sign*stride):(hitter&&phase>6.76&&phase<6.95?(sign>0?.30:-.15):.05);
     const x=sign*feetSpread;
     const hip=new THREE.Vector3(sign*.17,1.02-crouch,passDip*.11);
     const foot=new THREE.Vector3(x,.12,footZ-.09);
@@ -235,13 +253,16 @@ function posePlayer(player,position,phase,role){
     const rec=smoothBetween(phase,.16,.78)*(1-smoothBetween(phase,1.08,1.38));
     player.clasp.visible=rec>.55;
     armPos=[-1,1].map(sign=>blendPose(armRun(sign,runCycle*runIntensity),armReceive(sign),rec));
-    if(phase>4.40){const plant=smoothBetween(phase,5.34,5.63);
-      armPos=[-1,1].map(sign=>blendPose(armRun(sign,runCycle*runIntensity),armPlant(sign),plant));
-      if(phase>5.65){const lift=smoothBetween(phase,5.65,5.80);armPos=[-1,1].map((sign,j)=>blendPose(armPos[j],armLift(sign),lift))}
-      if(phase>5.80){const cock=smoothBetween(phase,5.80,5.92);armPos=[-1,1].map((sign,j)=>blendPose(armPos[j],armCock(sign),cock))}
-      if(phase>5.92){const hit=smoothBetween(phase,5.93,6.0);armPos=[-1,1].map((sign,j)=>blendPose(armPos[j],armHit(sign),hit))}
-      if(phase>6.02){const follow=smoothBetween(phase,6.04,6.38);armPos=[-1,1].map((sign,j)=>blendPose(armPos[j],armFollow(sign),follow))}
-      if(phase>6.55){const settle=smoothBetween(phase,6.55,6.95);armPos=[-1,1].map((sign,j)=>blendPose(armPos[j],armIdle(sign),settle))}
+    if(phase>4.40){
+      // Eyes track the high ball but the hitter waits in a loaded stance.
+      armPos=[-1,1].map((sign,j)=>blendPose(armPos[j],armIdle(sign),reading));
+      const plant=smoothBetween(phase,6.73,6.86);
+      if(phase>6.12)armPos=[-1,1].map(sign=>blendPose(armRun(sign,runCycle*runIntensity),armPlant(sign),plant));
+      if(phase>6.81){const lift=smoothBetween(phase,6.81,6.91);armPos=[-1,1].map((sign,j)=>blendPose(armPos[j],armLift(sign),lift))}
+      if(phase>6.90){const cock=smoothBetween(phase,6.90,6.97);armPos=[-1,1].map((sign,j)=>blendPose(armPos[j],armCock(sign),cock))}
+      if(phase>6.97){const hit=smoothBetween(phase,6.97,7.0);armPos=[-1,1].map((sign,j)=>blendPose(armPos[j],armHit(sign),hit))}
+      if(phase>7.03){const follow=smoothBetween(phase,7.03,7.39);armPos=[-1,1].map((sign,j)=>blendPose(armPos[j],armFollow(sign),follow))}
+      if(phase>7.55){const settle=smoothBetween(phase,7.55,7.95);armPos=[-1,1].map((sign,j)=>blendPose(armPos[j],armIdle(sign),settle))}
     }
   }else{
     const readiness=smoothBetween(phase,2.70,3.30);
@@ -257,7 +278,23 @@ function posePlayer(player,position,phase,role){
 function setProgress(p){progress=Math.max(0,Math.min(1,p));const phase=Math.min(8,progress*phases.length);timeline.value=Math.round(progress*1000);timeline.style.setProperty('--pct',`${progress*100}%`);const secs=Math.floor(progress*clockDuration);timeLabel.textContent=`00:${String(secs).padStart(2,'0')} / 00:16`;
   let current=stageAt(progress);stageCounter.textContent=`ЭТАП ${String(current+1).padStart(2,'0')} / 09`;stageDuration.textContent=phases[current].badge;stageTitle.textContent=phases[current].title;stageDescription.textContent=phases[current].desc;stageFocus.textContent=phases[current].focus;
   stageTiles.forEach((el,i)=>{el.classList.toggle('selected',i===current);el.setAttribute('aria-pressed',String(i===current))});
-  if(attackPlayer){posePlayer(attackPlayer,phasePosition(pathAttacker,phase,true),phase,'attack');posePlayer(setPlayer,phasePosition(pathSetter,phase),phase,'set');ballMesh.position.copy(interpolateBall(phase));ballMesh.rotation.set(phase*.7,phase*1.1,phase*.38);ballShadow.position.set(ballMesh.position.x,.012,ballMesh.position.z);const s=1+ballMesh.position.y/4;ballShadow.scale.set(s,s,s);ballShadow.material.opacity=Math.max(.07,.27-ballMesh.position.y*.032)}
+  if(attackPlayer){
+    posePlayer(attackPlayer,phasePosition(pathAttacker,phase,true),phase,'attack');
+    posePlayer(setPlayer,phasePosition(pathSetter,phase),phase,'set');
+    ballMesh.position.copy(interpolateBall(phase));ballMesh.rotation.set(phase*.7,phase*1.1,phase*.38);
+    ballShadow.position.set(ballMesh.position.x,.012,ballMesh.position.z);
+    const s=1+ballMesh.position.y/4;ballShadow.scale.set(s,s,s);ballShadow.material.opacity=Math.max(.07,.27-ballMesh.position.y*.032);
+    const readingNow=phase>=5&&phase<6.13;
+    if(aimMarker)aimMarker.visible=readingNow;
+    if(aimLine){
+      aimLine.visible=readingNow;
+      const start=attackPlayer.root.position.clone().add(new THREE.Vector3(0,2.33,0));
+      const end=new THREE.Vector3(attackPoint.x+.09,3.47,attackPoint.z-.40);
+      const pos=aimLine.geometry.attributes.position;
+      pos.setXYZ(0,start.x,start.y,start.z);pos.setXYZ(1,end.x,end.y,end.z);pos.needsUpdate=true;
+      aimLine.computeLineDistances();
+    }
+  }
 }
 function setPlaying(active){playing=active;playIcon.textContent=playing?'Ⅱ':'▶';playText.textContent=playing?'Пауза':'Воспроизвести';playButton.setAttribute('aria-label',playing?'Приостановить воспроизведение':'Запустить воспроизведение')}
 function view(name){cameraPreset=name;wheelInteraction=false;targetCamera.set(...viewPositions[name]);document.querySelectorAll('.camera-btn').forEach(el=>{const active=el.dataset.view===name;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active))})}
