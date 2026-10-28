@@ -1,71 +1,108 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Песок & Тактика · 3D пляжный волейбол</title><meta name="description" content="Интерактивная 3D-схема движения в пляжном волейболе: крест, плюс-плюс, передача и атака из зоны 4">
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-:root{font-family:Manrope,system-ui,sans-serif;color:#20302c;background:#f7f5ee}*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{cursor:pointer}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 5%;border-bottom:1px solid #deded6}.logo{font-size:16px;font-weight:800;letter-spacing:.12em}.logo i{font-style:normal;color:#df764a}.top small{color:#7a8179;font-weight:700;letter-spacing:.07em}.layout{max-width:1480px;margin:0 auto;padding:32px 4%;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(320px,.85fr);gap:36px}.eyebrow{font-size:11px;color:#b3714b;letter-spacing:.2em;font-weight:800;text-transform:uppercase}h1{font-size:clamp(33px,4vw,58px);letter-spacing:-.055em;line-height:1.09;margin:13px 0}h1 em{color:#d77e4d;font-style:normal}p{line-height:1.75}header p{max-width:580px;color:#67746c;margin-bottom:24px}.viewer{background:#d4e5dd;border:1px solid #e9e5d7;border-radius:22px;overflow:hidden;box-shadow:0 18px 45px #7a76521c;position:relative}.viewer canvas{display:block;width:100%;height:520px;touch-action:none}.scene-label{position:absolute;top:18px;left:20px;background:#ffffffd9;border-radius:30px;padding:8px 13px;font-size:11px;font-weight:800;letter-spacing:.08em}.legend{position:absolute;bottom:12px;left:12px;display:flex;gap:10px;flex-wrap:wrap;background:#ffffffdd;border-radius:14px;padding:9px 12px;font-size:11px;font-weight:700}.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:4px}.orange{background:#e4783d}.blue{background:#288bbd}.green{background:#31a17d}.cameras{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:13px}.btn{border:1px solid #dcded5;border-radius:12px;background:white;padding:10px 14px;font-size:12px;font-weight:700;color:#385049}.btn.active{background:#274f45;color:white;border-color:#274f45}.panel{background:#fff;border:1px solid #e6e5df;border-radius:22px;padding:25px;margin-bottom:16px;box-shadow:0 7px 20px #8d90700a}h2{font-size:29px;letter-spacing:-.05em;line-height:1.2;margin:10px 0 15px}.muted{color:#758079;font-size:13px}.time{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px;font-weight:800}.time span{color:#898e87}input[type=range]{width:100%;accent-color:#db7945;cursor:pointer;margin:25px 0 8px}.ticks{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.05em;color:#9b9f98}.transport{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px}.transport button{border:0;border-radius:12px;background:#f1f2eb;padding:12px 16px;font-weight:800}.transport .primary{background:#db7846;color:white;flex:1}select{border:1px solid #e4e6df;border-radius:12px;padding:10px;background:white}.stepnum{font-size:11px;font-weight:800;color:#bd7149;letter-spacing:.12em}h3{font-size:22px;letter-spacing:-.03em;margin:12px 0}.description{color:#66766d;font-size:14px;min-height:80px;margin-bottom:8px}.steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.steps button{border:1px solid #e6e9e2;text-align:left;padding:13px;background:white;border-radius:12px;color:#4b6157;font-size:12px;font-weight:800}.steps button strong{color:#b77f5b;margin-right:8px}.steps button.active{background:#e7f2ee;border-color:#91bdad}.footer{max-width:1480px;margin:10px auto;padding:20px 4% 35px;color:#858b80;font-size:11px}#error{display:none;position:absolute;top:48%;left:8%;right:8%;background:white;padding:15px;border-radius:12px} @media(max-width:900px){.layout{display:block;padding:26px 4%}.sidebar{margin-top:24px}.viewer canvas{height:410px}.top small{display:none}}@media(max-width:500px){.viewer canvas{height:355px}.legend{font-size:10px}.panel{padding:19px}h1{font-size:35px}.top{padding:19px 4%}}
-</style>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script></head>
-<body><div class="top"><div class="logo">◈ ПЕСОК <i>&</i> ТАКТИКА</div><small>3D-ТРЕНИРОВОЧНАЯ ПЛОЩАДКА · АТАКА ИЗ ЗОНЫ 4</small></div>
-<div class="layout"><section><header><div class="eyebrow">01 / Тактика пляжного волейбола</div><h1>От приёма<br><em>до удара.</em></h1><p>Следите за маршрутом нападающего и пасующего в объёмной сцене. Вращайте площадку мышью или пальцем, переключайте этапы и управляйте движением.</p></header>
-<div class="viewer"><div class="scene-label">● ИНТЕРАКТИВНАЯ 3D-СЦЕНА</div><canvas id="scene"></canvas><div id="error">Не удалось запустить 3D. Проверьте доступ к интернету и поддержку WebGL.</div><div class="legend"><span><i class="dot orange"></i>Нападающий</span><span><i class="dot blue"></i>Пасующий</span><span><i class="dot green"></i>Зона ++</span></div></div>
-<div class="cameras"><button class="btn active" data-view="iso">Обзор</button><button class="btn" data-view="top">Сверху</button><button class="btn" data-view="side">Сбоку</button><button class="btn" id="routes">Скрыть маршруты</button></div></section>
-<aside class="sidebar"><div class="eyebrow">02 / Розыгрыш</div><h2>Сценарий движения</h2><p class="muted">Семь фаз одной комбинации</p><div class="panel"><div class="time"><span>ПРОГРЕСС РОЗЫГРЫША</span><strong id="clock">00:00 / 00:12</strong></div><input id="timeline" type="range" min="0" max="1000" value="0" aria-label="Прогресс розыгрыша"><div class="ticks"><span>ПРИЁМ</span><span>ПЕРЕДАЧА</span><span>УДАР</span></div><div class="transport"><button id="prev" title="Предыдущий этап">‹</button><button class="primary" id="play">▶ Воспроизвести</button><button id="next" title="Следующий этап">›</button><select id="speed" aria-label="Скорость"><option value=".75">0,75×</option><option selected value="1">1×</option><option value="1.5">1,5×</option></select></div></div>
-<div class="panel"><div class="stepnum" id="counter">ЭТАП 01 / 07</div><h3 id="phase-title"></h3><p class="description" id="phase-description"></p><div class="steps" id="steps"></div></div><div class="panel muted">Подсказка тренера: пасующий находится в «кресте» к моменту приёма; нападающий выходит за левую боковую линию и начинает прямой разбег после высокой передачи.</div></aside></div>
-<div class="footer">Мяч — авторская 3D-визуализация в расцветке Mikasa BV550C-WYBR. «Крест» и «++» — тренировочные ориентиры, а не официальные зоны.</div>
-<script type="module">
-import * as THREE from 'three';
-import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-const phaseData=[
-['Выход в «крест»','Пасующий видит, что партнёр принимает мяч, и заранее выходит в «крест».'],
-['Приём мяча','В момент приёма пасующий уже в «кресте». Нападающий направляет мяч вперёд.'],
-['Доводка в ++','Мяч летит в «++» перед принимающим, ближе к сетке. Нападающий уходит влево за боковую линию.'],
-['Выход под передачу','Пасующий занимает «++». Нападающий находится в стартовой точке разбега слева за площадкой.'],
-['Высокая передача','Пасующий даёт высокую передачу к зоне 4. Нападающий ещё ожидает подходящего момента для начала разбега.'],
-['Прямой разбег','Нападающий ускоряется по прямой из-за левой боковой линии навстречу снижающемуся мячу.'],
-['Синхронный удар','Нападающий и мяч одновременно достигают точки удара в зоне 4; пасующий готов к страховке.']
-];
-const canvas=document.getElementById('scene'), slider=document.getElementById('timeline'), btn=document.getElementById('play'), steps=document.getElementById('steps');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.45;
-const scene=new THREE.Scene();scene.background=new THREE.Color('#a5d9db');scene.fog=new THREE.Fog('#a5d9db',24,75);
-const camera=new THREE.PerspectiveCamera(42,1,.1,150);camera.position.set(12,16,18);
-const control=new OrbitControls(camera,canvas);control.enableDamping=true;control.enablePan=false;control.minPolarAngle=.1;control.maxPolarAngle=1.5;control.minDistance=9;control.maxDistance=38;control.target.set(0,.9,0);
-scene.add(new THREE.HemisphereLight('#e1f6ff','#c59b60',2.5));const sun=new THREE.DirectionalLight('#fff4d7',3.3);sun.position.set(-8,17,10);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-18;sun.shadow.camera.right=18;sun.shadow.camera.top=18;sun.shadow.camera.bottom=-18;scene.add(sun);
-const mat=(c,r=0.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
-const make=(parent,g,m,x=0,y=0,z=0)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o};
-const sphere=(parent,r,m,x=0,y=0,z=0)=>make(parent,new THREE.SphereGeometry(r,24,16),m,x,y,z);
-function rod(parent,x1,y1,z1,x2,y2,z2,r,m){const a=new THREE.Vector3(x1,y1,z1),b=new THREE.Vector3(x2,y2,z2),d=b.clone().sub(a);const o=make(parent,new THREE.CylinderGeometry(r,r,d.length(),10),m,...a.clone().add(b).multiplyScalar(.5).toArray());o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return o}
-const sand=mat('#ecd1a0',1), ground=make(scene,new THREE.PlaneGeometry(110,110),sand,0,-.1,0);ground.rotation.x=-Math.PI/2;ground.castShadow=false;
-const court=make(scene,new THREE.PlaneGeometry(8,16),mat('#f1d6a4',1),0,-.055,0);court.rotation.x=-Math.PI/2;court.castShadow=false;
-const stripe=mat('#fffaf0',.7);for(const [a,b] of [[[-4,-8],[4,-8]],[[-4,8],[4,8]],[[-4,-8],[-4,8]],[[4,-8],[4,8]]])rod(scene,a[0],.025,a[1],b[0],.025,b[1],.045,stripe);
-for(const x of [-4.13,4.13]){rod(scene,x,0,0,x,2.75,0,.07,mat('#f4f4f0'));}
-const netmat=new THREE.LineBasicMaterial({color:'#d9eeea',transparent:true,opacity:.85});
-for(let y=.2;y<2.5;y+=.17){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-4.1,y,0),new THREE.Vector3(4.1,y,0)]);scene.add(new THREE.Line(g,netmat))}
-for(let x=-4.1;x<4.15;x+=.22){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,.2,0),new THREE.Vector3(x,2.5,0)]);scene.add(new THREE.Line(g,netmat))}
-rod(scene,-4.13,2.5,0,4.13,2.5,0,.056,stripe);
-const ocean=make(scene,new THREE.PlaneGeometry(90,36),new THREE.MeshBasicMaterial({color:'#6aabb4'}),0,-.09,-39);ocean.rotation.x=-Math.PI/2;ocean.castShadow=false;
-const plan=(x,z,y=0)=>new THREE.Vector3((x-189)*8/262,y,(z-75)*8/236);
-const attackPath=[[103,272],[103,272],[25,227],[25,227],[25,227],[61,169],[90,114]].map(p=>plan(...p));
-const setterPath=[[266,268],[194,222],[156,181],[120,120],[120,120],[146,155],[156,184]].map(p=>plan(...p));
-const plus=plan(120,109),cross=plan(194,222),start=plan(25,227),hit=plan(90,114);
-function label(text,color,pos,scale=1){const c=document.createElement('canvas');c.width=384;c.height=160;const x=c.getContext('2d');x.fillStyle='#fffdf1';x.beginPath();x.roundRect(10,10,364,140,27);x.fill();x.strokeStyle=color;x.lineWidth=9;x.stroke();x.font='bold 76px Arial';x.fillStyle=color;x.textAlign='center';x.textBaseline='middle';x.fillText(text,192,79);const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;const m=new THREE.MeshBasicMaterial({map:texture,transparent:true,side:THREE.DoubleSide,depthWrite:false});const mesh=make(scene,new THREE.PlaneGeometry(1.45*scale,.59*scale),m,pos.x,.043,pos.z);mesh.rotation.x=-Math.PI/2;mesh.castShadow=false}
-label('++','#269b74',plus);label('×','#288fbe',cross);label('СТАРТ','#c8763c',start,.8);
-const routes=new THREE.Group();scene.add(routes);function track(pts,color,r=.035){const g=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(v=>new THREE.Vector3(v.x,.07,v.z))),70,r,7,false);make(routes,g,new THREE.MeshBasicMaterial({color,transparent:true,opacity:.9})).castShadow=false}
-track([setterPath[0],setterPath[1],setterPath[3]],'#288fc0');track([attackPath[1],attackPath[2]],'#df9969');track([attackPath[3],attackPath[6]],'#d8713e',.048);
-const trajectory=new THREE.QuadraticBezierCurve3(new THREE.Vector3(plus.x,1.72,plus.z),new THREE.Vector3(-2.5,7.4,1.4),new THREE.Vector3(hit.x,2.74,hit.z));make(routes,new THREE.TubeGeometry(trajectory,65,.016,6,false),new THREE.MeshBasicMaterial({color:'#fff9df',transparent:true,opacity:.9})).castShadow=false;
-function character(shirt,shorts,skin,hair){const root=new THREE.Group();scene.add(root);const body=new THREE.Group();root.add(body);const top=mat(shirt),bottom=mat(shorts),flesh=mat(skin),dark=mat(hair),white=mat('#ffffff');sphere(body,.31,bottom,0,1.02,0);const torso=sphere(body,.40,top,0,1.58,0);torso.scale.set(1,.98,.68);sphere(body,.14,flesh,0,1.97,0);sphere(body,.31,flesh,0,2.25,0);const cap=sphere(body,.31,dark,0,2.39,.05);cap.scale.y=.53;for(const x of [-.13,.13])sphere(body,.046,mat('#273739'),x,2.28,-.274);const arms=[],legs=[];for(const sign of [-1,1]){const arm=new THREE.Group();body.add(arm);arm.position.set(sign*.39,1.77,0);const sleeve=sphere(arm,.15,top,0,-.07,0);const fore=make(arm,new THREE.CapsuleGeometry(.105,.4,5,12),flesh,0,-.38,0);arms.push(arm);const leg=new THREE.Group();body.add(leg);leg.position.set(sign*.17,1.02,0);make(leg,new THREE.CapsuleGeometry(.13,.43,5,12),flesh,0,-.43,0);const foot=sphere(leg,.16,mat('#38515a'),0,-.86,-.12);foot.scale.set(.86,.58,1.36);legs.push(leg)}return{root,body,arms,legs}}
-const attacker=character('#e67c43','#314749','#e3b18c','#463529');
-const setter=character('#288dbb','#243f50','#f2c29b','#634738');
-function ballTexture(){const c=document.createElement('canvas');c.width=1024;c.height=512;const x=c.getContext('2d');x.fillStyle='#ffffff';x.fillRect(0,0,1024,512);for(let k=-2;k<8;k++){let xx=k*190;for(const [color,delta,w] of [['#1b4fa9',0,74],['#ffd52a',78,68]]){x.fillStyle=color;x.beginPath();for(let y=0;y<=512;y+=4){let pos=xx+delta+34*Math.sin(y/512*Math.PI*2+k*.3);if(y===0)x.moveTo(pos,y);else x.lineTo(pos,y)}for(let y=512;y>=0;y-=4){let pos=xx+delta+w+34*Math.sin(y/512*Math.PI*2+k*.3);x.lineTo(pos,y)}x.closePath();x.fill()}for(let y=12;y<512;y+=15){let dx=xx+78+34*Math.sin(y/512*Math.PI*2+k*.3);x.fillStyle='#ed6744';for(let d=-3;d<=3;d++) {x.beginPath();x.arc(dx+d*5,y+(Math.abs(d)%2)*3,1.8,0,Math.PI*2);x.fill()}}}x.fillStyle='#162c40';x.font='bold 38px Arial';x.fillText('MIKASA',420,265);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
-const ball=make(scene,new THREE.SphereGeometry(.215,56,40),new THREE.MeshStandardMaterial({map:ballTexture(),roughness:.79}),0,2,0);
-let p=0,playing=false,speed=1,last=performance.now(),cameraTarget=null,interactive=false;
-const interpolate=(pts,t)=>{let i=Math.min(5,Math.floor(t)),f=Math.max(0,Math.min(1,t-i));return pts[i].clone().lerp(pts[i+1],f)};
-function ballPoint(t){const first=[[103,36,4.4],[103,257,1.04],[112,176,2.9],[120,103,1.72],[120,103,1.72]];if(t<=4){const i=Math.min(3,Math.floor(t)),f=Math.max(0,Math.min(1,t-i));return plan(first[i][0]+(first[i+1][0]-first[i][0])*f,first[i][1]+(first[i+1][1]-first[i][1])*f,first[i][2]+(first[i+1][2]-first[i][2])*f)}return trajectory.getPoint((t-4)/2)}
-function pose(o,pos,phase,kind){o.root.position.copy(pos);const path=kind==='attack'?attackPath:setterPath;const ix=Math.min(5,Math.floor(phase)),direction=path[ix+1].clone().sub(path[ix]);if(direction.lengthSq()>.01)o.body.rotation.y=Math.atan2(direction.x,-direction.z);const moving=direction.lengthSq()>.04;const wave=moving?Math.sin(phase*12)*.43:0;o.legs[0].rotation.x=wave;o.legs[1].rotation.x=-wave;o.arms[0].rotation.x=-wave*.7;o.arms[1].rotation.x=wave*.7;if(kind==='set'&&phase>=3){const k=Math.min(1,(phase-3)*1.5);for(const arm of o.arms)arm.rotation.x=-2.4*k;if(phase>4)for(const arm of o.arms)arm.rotation.x=-.55}if(kind==='attack'&&phase>5){const k=Math.min(1,(phase-5)*1.3);o.arms[0].rotation.x=-2.8*k;o.arms[1].rotation.x=-1.9*k;o.root.position.y=.15*Math.sin(k*Math.PI*.8)}else o.root.position.y=0}
-function update(n){p=Math.max(0,Math.min(1,n));slider.value=Math.round(p*1000);document.getElementById('clock').textContent='00:'+String(Math.floor(p*12)).padStart(2,'0')+' / 00:12';const phase=p*6,idx=Math.min(6,Math.floor(phase+.001));document.getElementById('counter').textContent='ЭТАП '+String(idx+1).padStart(2,'0')+' / 07';document.getElementById('phase-title').textContent=phaseData[idx][0];document.getElementById('phase-description').textContent=phaseData[idx][1];[...steps.children].forEach((b,i)=>b.classList.toggle('active',i===idx));pose(attacker,interpolate(attackPath,phase),phase,'attack');pose(setter,interpolate(setterPath,phase),phase,'set');ball.position.copy(ballPoint(phase));ball.rotation.set(phase*.74,phase*1.13,phase*.33)}
-phaseData.forEach((phase,i)=>{const b=document.createElement('button');b.innerHTML='<strong>'+String(i+1).padStart(2,'0')+'</strong>'+phase[0];b.onclick=()=>{playing=false;update(i/6);refreshPlay()};steps.appendChild(b)});
-function refreshPlay(){btn.textContent=playing?'Ⅱ Пауза':'▶ Воспроизвести'}btn.onclick=()=>{if(p>=1)update(0);playing=!playing;refreshPlay()};slider.oninput=()=>{playing=false;refreshPlay();update(+slider.value/1000)};document.getElementById('prev').onclick=()=>{playing=false;refreshPlay();update(Math.max(0,(Math.ceil(p*6-.001)-1)/6))};document.getElementById('next').onclick=()=>{playing=false;refreshPlay();update(Math.min(1,(Math.floor(p*6+.001)+1)/6))};document.getElementById('speed').onchange=e=>speed=+e.target.value;
-const views={iso:[12,16,18],top:[.01,24,1],side:[16,8,3]};document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{interactive=false;cameraTarget=new THREE.Vector3(...views[b.dataset.view]);document.querySelectorAll('[data-view]').forEach(v=>v.classList.toggle('active',v===b))});control.addEventListener('start',()=>{interactive=true;cameraTarget=null});document.getElementById('routes').onclick=e=>{routes.visible=!routes.visible;e.target.textContent=routes.visible?'Скрыть маршруты':'Показать маршруты'};
-function resize(){const rect=canvas.getBoundingClientRect();renderer.setSize(rect.width,rect.height,false);camera.aspect=rect.width/rect.height;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(canvas);resize();update(0);
-function frame(now){requestAnimationFrame(frame);const d=Math.min(.08,(now-last)/1000);last=now;if(playing){update(Math.min(1,p+d*speed/12));if(p>=1){playing=false;refreshPlay()}}if(cameraTarget&&!interactive){camera.position.lerp(cameraTarget,.065);control.target.lerp(new THREE.Vector3(0,.8,0),.065)}control.update();renderer.render(scene,camera)}requestAnimationFrame(frame);
-</script></body></html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f9f6ee" />
+  <meta name="description" content="Интерактивная 3D-тактика пляжного волейбола: приём, выход в крест, доводка ++, передача и атака из зоны 4." />
+  <title>Песок и тактика — 3D пляжный волейбол</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">{
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+    }
+  }</script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">◈</span><span>ПЕСОК<span class="brand-accent">&</span>ТАКТИКА</span></div>
+      <div class="header-meta"><span class="header-dot"></span> ТРЕНИРОВОЧНЫЙ 3D-РАЗБОР <span class="header-divider"></span> ПЛЯЖНЫЙ ВОЛЕЙБОЛ</div>
+      <button class="quiet-button about-button" id="helpButton" aria-haspopup="dialog">Как управлять <span aria-hidden="true">↗</span></button>
+    </header>
+
+    <main class="main-layout">
+      <section class="experience" aria-label="Интерактивная трёхмерная площадка">
+        <div class="scene-heading">
+          <div>
+            <div class="eyebrow"><span class="eyebrow-number">01 / ТАКТИКА</span> <span class="eyebrow-rule"></span> АТАКА СЛЕВА</div>
+            <h1>От приёма<br /><em>до удара.</em></h1>
+            <p class="scene-subtitle">Проследите движение двух игроков на настоящей 3D-площадке. Меняйте ракурс, запускайте розыгрыш и изучайте каждый момент.</p>
+          </div>
+        </div>
+
+        <div class="scene-panel">
+          <div class="scene-topline">
+            <span class="live-indicator"><span class="live-dot"></span> 3D-СЦЕНА</span>
+            <span class="topline-right">АТАКА ИЗ ЗОНЫ <b>4</b></span>
+          </div>
+          <div class="canvas-wrap" id="canvasWrap">
+            <canvas id="scene" aria-label="3D площадка пляжного волейбола, игроки и мяч. Для вращения камеры перетаскивайте изображение."></canvas>
+            <div class="loading-scene" id="sceneLoading"><span class="loading-ring"></span><span>Загружаем 3D-площадку…</span></div>
+            <div class="scene-error" id="sceneError" hidden>Не удалось загрузить 3D. Проверьте подключение к интернету и обновите страницу.</div>
+            <div class="scene-legend" aria-label="Обозначения">
+              <span><i class="legend-dot attacker-dot"></i> Нападающий</span>
+              <span><i class="legend-dot setter-dot"></i> Пасующий</span>
+              <span><i class="legend-dot target-dot"></i> Зона ++</span>
+            </div>
+            <div class="camera-hint" id="cameraHint">↻ Вращайте площадку мышью или пальцем</div>
+          </div>
+          <div class="scene-footer">
+            <div class="camera-controls" aria-label="Ракурс камеры">
+              <span class="minor-label">КАМЕРА</span>
+              <button class="camera-btn active" data-view="isometric" aria-pressed="true">Обзор</button>
+              <button class="camera-btn" data-view="top" aria-pressed="false">Сверху</button>
+              <button class="camera-btn" data-view="attack" aria-pressed="false">Сбоку</button>
+            </div>
+            <label class="route-toggle"><input id="showRoutes" type="checkbox" checked /><span class="switch" aria-hidden="true"></span><span>Маршруты</span></label>
+          </div>
+        </div>
+        <div class="footer-note"><span class="mini-star">✳</span> Мяч выполнен по мотивам Mikasa BV550C-WYBR. Учебная визуализация, не официальный продукт Mikasa.</div>
+      </section>
+
+      <aside class="control-rail" aria-label="Управление розыгрышем">
+        <div class="rail-heading">
+          <div class="eyebrow">02 / РОЗЫГРЫШ</div>
+          <h2>Сценарий<br />движения</h2>
+          <p>Одна комбинация. Восемь ключевых моментов.</p>
+        </div>
+        <div class="timeline-card">
+          <div class="timeline-top"><span class="minor-label">ПРОГРЕСС РОЗЫГРЫША</span><span id="timeLabel" class="mono">00:00 / 00:14</span></div>
+          <input id="timeline" class="timeline" type="range" min="0" max="1000" step="1" value="0" aria-label="Перемещение по розыгрышу" />
+          <div class="milestones" aria-hidden="true"><span>ПРИЁМ</span><span>ПАС</span><span>УДАР</span></div>
+          <div class="playback-row">
+            <button id="backBtn" class="transport secondary-transport" aria-label="Предыдущий этап">↶</button>
+            <button id="playBtn" class="transport main-transport" aria-label="Запустить воспроизведение"><span id="playIcon">▶</span><span id="playText">Воспроизвести</span></button>
+            <button id="nextBtn" class="transport secondary-transport" aria-label="Следующий этап">↷</button>
+            <select id="speed" aria-label="Скорость воспроизведения"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option></select>
+          </div>
+        </div>
+        <div class="stage-card">
+          <div class="stage-upper"><span class="stage-badge" id="stageCounter">ЭТАП 01 / 08</span><span class="stage-duration" id="stageDuration">ПОДГОТОВКА</span></div>
+          <h3 id="stageTitle">Выход в «крест»</h3>
+          <p id="stageDescription">Пасующий видит, что партнёр принимает, и заранее перемещается в «крест».</p>
+          <div class="stage-divider"></div>
+          <div class="focus-heading">НА ЧТО СМОТРЕТЬ</div>
+          <p class="stage-focus" id="stageFocus">К моменту приёма пасующий уже должен занять позицию в «кресте».</p>
+        </div>
+        <div class="stage-grid" role="group" aria-label="Быстрый переход по этапам">
+          <button class="stage-tile selected" data-stage="0"><span>01</span><strong>Подготовка</strong></button>
+          <button class="stage-tile" data-stage="1"><span>02</span><strong>Приём</strong></button>
+          <button class="stage-tile" data-stage="2"><span>03</span><strong>Доводка</strong></button>
+          <button class="stage-tile" data-stage="3"><span>04</span><strong>Зона ++</strong></button>
+          <button class="stage-tile" data-stage="4"><span>05</span><strong>Передача</strong></button>
+          <button class="stage-tile" data-stage="5"><span>06</span><strong>Разбег</strong></button>
+          <button class="stage-tile" data-stage="6"><span>07</span><strong>Удар</strong></button>
+          <button class="stage-tile" data-stage="7"><span>08</span><strong>Приземление</strong></button>
+        </div>
+        <div class="coach-tip"><span class="tip-icon">✦</span><div><strong>Подсказка тренера</strong><p>Нападающий уходит за левую боковую линию и выходит на удар по прямой. При высокой передаче разбег начинается чуть позже.</p></div></div>
+      </aside>
+    </main>
+    <footer class="bottom-bar"><span>3D ТРЕНИРОВОЧНАЯ СХЕМА</span><span>ДВИГАЙТЕСЬ ПО ЭТАПАМ · ИЗУЧАЙТЕ ТРАЕКТОРИИ</span><span>© ПЕСОК & ТАКТИКА</span></footer>
+  </div>
+  <dialog id="helpDialog"><div class="dialog-top"><h2>Управление 3D-сценой</h2><button id="closeHelp" aria-label="Закрыть">×</button></div><p>Перетаскивайте площадку мышью или пальцем, чтобы повернуть камеру. Используйте колесо мыши или жест масштабирования двумя пальцами для приближения.</p><p>Ползунок перемещает игроков и мяч синхронно. Кнопки этапов позволяют перейти к конкретному моменту; камера сверху показывает игровые коридоры.</p><p>Пробел — пауза/воспроизведение, стрелки ← и → — переход между этапами.</p></dialog>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
