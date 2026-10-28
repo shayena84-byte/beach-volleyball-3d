@@ -20,10 +20,10 @@ const routesToggle = document.querySelector('#showRoutes');
 
 const phases = [
   {title:'Выход в «крест»', badge:'ПОДГОТОВКА', desc:'Пасующий видит, что партнёр будет принимать, и заранее выходит в «крест».', focus:'В момент касания мяча пасующий уже должен быть в «кресте».'},
-  {title:'Приём мяча',badge:'ПЕРВОЕ КАСАНИЕ',desc:'Нападающий выполняет приём. Пасующий уже находится в «кресте» и готовится к выходу под мяч.',focus:'Сразу после определения принимающего обязанности игроков разделяются.'},
+  {title:'Приём мяча',badge:'ПЕРВОЕ КАСАНИЕ',desc:'Нападающий подседает под мяч, наклоняет корпус вперёд и соединяет выпрямленные предплечья для нижнего приёма. Пасующий уже находится в «кресте».',focus:'В момент первого касания платформа из предплечий встречает мяч перед игроком; ноги сгибаются, руки не разводятся.'},
   {title:'Доводка и отход влево',badge:'СМЕНА ПОЗИЦИЙ',desc:'Мяч доводится вперёд, в «++». Нападающий отходит за левую боковую линию.',focus:'Игроки не пересекают путь друг друга: один идёт к мячу, второй освобождает пространство.'},
   {title:'Пасующий в зоне «++»',badge:'ТОЧКА ПЕРЕДАЧИ',desc:'Пасующий выходит под мяч ближе к сетке. Нападающий занимает точку старта разбега слева за площадкой.',focus:'«++» находится перед принимающим — это ориентир для качественной доводки.'},
-  {title:'Высокая передача в зону 4',badge:'ВТОРОЕ КАСАНИЕ',desc:'Пасующий отправляет высокую передачу к левому краю сетки. Нападающий ещё готовится к разбегу.',focus:'При высокой передаче нет необходимости начинать разбег слишком рано.'},
+  {title:'Высокая передача в зону 4',badge:'ВТОРОЕ КАСАНИЕ',desc:'Пасующий разворачивает корпус и взгляд к зоне 4, затем отправляет туда высокую передачу. Нападающий ещё готовится к разбегу.',focus:'Лицо пасующего и направление движения рук ориентированы к точке будущей атаки.'},
   {title:'Прямой разбег',badge:'УСКОРЕНИЕ',desc:'Мяч поднимается по высокой дуге. Нападающий ускоряется по прямой из-за левой боковой линии.',focus:'Движение нападающего синхронизировано с полётом мяча, без забегания по дуге.'},
   {title:'Синхронный удар',badge:'ТРЕТЬЕ КАСАНИЕ',desc:'Нападающий отталкивается двумя ногами, выводит ударную руку из положения «лук и стрела» и встречает мяч на максимальной высоте.',focus:'Контакт мяча с ладонью совпадает с завершающей фазой прыжка.'},
   {title:'Приземление и страховка',badge:'ЗАВЕРШЕНИЕ',desc:'После удара нападающий приземляется на обе ноги со сгибанием коленей, а пасующий занимает позицию для страховки.',focus:'Контролируемое приземление в песок и готовность к следующему действию.'},
@@ -32,7 +32,7 @@ const phases = [
 const plan = (x,z,y=0) => new THREE.Vector3((x-189)*8/262,y,(z-75)*8/236);
 const pathAttacker = [[103,272],[103,272],[25,227],[25,227],[25,227],[61,169],[90,114],[95,134]].map(p=>plan(...p));
 const pathSetter = [[266,268],[194,222],[156,181],[120,120],[120,120],[146,155],[156,184],[162,192]].map(p=>plan(...p));
-const ballFirst = [[103,36,4.4],[103,257,1.03],[112,176,3.0],[120,103,2.44],[120,103,2.44]];
+const ballFirst = [[103,36,4.4],[103,240,.65],[112,176,3.0],[120,103,2.44],[120,103,2.44]];
 const plusPoint=plan(120,109), crossPoint=plan(194,222), attackPoint=plan(90,114), startPoint=plan(25,227);
 let progress=0, playing=false, speed=1, lastTime=performance.now(), renderer, scene, camera, controls, attackPlayer, setPlayer, ballMesh, ballShadow, travelRoutes, cameraPreset='isometric';
 const clockDuration=14;
@@ -100,8 +100,10 @@ function createPlayer({shirt,shorts,skin,hair,accent,name,number}){
     const foot=sphere(root,.16,skinMat);foot.scale.set(1,.57,1.5);
     legs.push({sign,thigh,shin,knee,ankle,foot});
   }
+  // A visible joined-hands silhouette reinforces the low bump technique.
+  const clasp=sphere(body,.116,skinMat,0,1.18,-.83);clasp.scale.set(1.15,.7,1.0);clasp.visible=false;
   const label=makeNameSprite(name,accent);label.position.set(0,3.25,0);root.add(label);
-  return {root,body,arms,legs,label,role:name};
+  return {root,body,arms,legs,label,clasp,role:name};
 }
 function clamp01(x){return Math.min(1,Math.max(0,x))}
 function smoothBetween(x,a,b){return smooth(clamp01((x-a)/(b-a)))}
@@ -113,7 +115,8 @@ function setArms(player,posed){for(let i=0;i<2;i++){
 }}
 const armIdle=sign=>[sign*.48,1.40,-.06,sign*.51,1.13,-.29];
 const armRun=(sign,wave)=>[sign*.49,1.48,wave*.11-.10,sign*.43,1.19,wave*.42-.12];
-const armReceive=sign=>[sign*.26,1.33,-.45,sign*.075,1.05,-.82];
+// Both elbows and wrists form one rigid, joined forearm platform in front of the hitter.
+const armReceive=sign=>[sign*.21,1.49,-.43,sign*.055,1.18,-.83];
 const armSetReady=sign=>[sign*.42,2.06,-.20,sign*.22,2.36,-.48];
 const armSetPush=sign=>[sign*.35,2.33,-.26,sign*.17,2.77,-.42];
 const armPlant=sign=>[sign*.57,1.23,.47,sign*.69,.93,.58];
@@ -177,32 +180,46 @@ function posePlayer(player,position,phase,role){
   player.root.position.copy(position);
   const i=Math.min(6,Math.floor(phase));const advance=path[i+1].clone().sub(path[i]);
   const running=hitter?(phase>1.18&&phase<2.95)||(phase>4.36&&phase<5.77):(phase<.96)||(phase>1.45&&phase<3.12)||(phase>4.15&&phase<5.5);
-  const heading=running&&advance.lengthSq()>.005?Math.atan2(advance.x,-advance.z):0;
-  // Rotate toward the targeted attack when hand-setting, not sideways.
-  const setterFace= Math.atan2(attackPoint.x-plusPoint.x,-(attackPoint.z-plusPoint.z));
-  const face=hitter? (phase<1.22?0:phase<3.15?heading:phase<4.4?0:heading) : phase>3.10&&phase<4.65?setterFace:heading;
+  // The model's eyes face LOCAL -Z. Under a positive Y rotation, -Z points
+  // toward NEGATIVE world X: atan2(-dx,-dz), not atan2(dx,-dz).
+  const heading=advance.lengthSq()>.005?Math.atan2(-advance.x,-advance.z):0;
+  const passDirection=attackPoint.clone().sub(plusPoint);
+  const setterFace=Math.atan2(-passDirection.x,-passDirection.z);
+  const approach=pathSetter[3].clone().sub(pathSetter[2]);
+  const approachFace=Math.atan2(-approach.x,-approach.z);
+  const cover=pathSetter[5].clone().sub(pathSetter[4]);
+  const coverFace=Math.atan2(-cover.x,-cover.z);
+  const rotateToward=(from,to,t)=>from+Math.atan2(Math.sin(to-from),Math.cos(to-from))*t;
+  // Turn smoothly during arrival, look straight toward zone 4 throughout the
+  // overhead pass, and only then rotate toward the defensive coverage route.
+  const setterFacing=phase<2.78?heading:
+    phase<3.25?rotateToward(approachFace,setterFace,smoothBetween(phase,2.78,3.25)):
+    phase<4.38?setterFace:rotateToward(setterFace,coverFace,smoothBetween(phase,4.38,4.80));
+  const face=hitter?(phase<1.22?0:phase<3.15?heading:phase<4.4?0:heading):setterFacing;
   player.root.rotation.y=face;
   const runCycle=Math.sin(phase*(hitter?16.2:13.5));
   const runIntensity=running?(hitter&&phase>4.36?Math.min(1,.38+(phase-4.36)*.48):.78):0;
-  const passDip=hitter?(1-smoothBetween(phase,1.10,1.42))*smoothBetween(phase,.30,.86):0;
+  // The receiver is already low BEFORE impact and remains low through touch.
+  const passDip=hitter?(1-smoothBetween(phase,1.08,1.38))*smoothBetween(phase,.21,.80):0;
   const setterDip=!hitter?smoothBetween(phase,2.7,3.3)*(1-smoothBetween(phase,3.92,4.18)):.0;
   const plantDip=hitter?smoothBetween(phase,5.43,5.65)*(1-smoothBetween(phase,5.73,5.86))*.27:0;
   const landingDip=hitter?smoothBetween(phase,6.55,6.87)*.17:0;
-  const crouch=passDip*.32+setterDip*.22+plantDip+landingDip;
+  const crouch=passDip*.40+setterDip*.22+plantDip+landingDip;
   const jump=hitter?(smoothBetween(phase,5.67,5.93)*.68*(1-smoothBetween(phase,6.10,6.96))):0;
   player.root.position.y=jump+(running?Math.abs(runCycle)*.035:0);
   player.body.position.y=-crouch;
-  player.body.rotation.x=hitter?(-.045-passDip*.11-plantDip*.24):(-setterDip*.07);
+  player.body.rotation.x=hitter?(-.045-passDip*.20-plantDip*.24):(-setterDip*.07);
   player.body.rotation.z=hitter&&phase>5.75&&phase<6.30?-.055:0;
   // Three accelerating steps (left–right–left), two-foot plant and sand-absorbing landing.
-  const feetSpread=hitter&&phase>=5.53&&phase<5.81?.35:.20;
+  const feetSpread=hitter&&phase>=5.53&&phase<5.81?.35:(hitter?.20+passDip*.13:.20);
   const stride=runIntensity*runCycle*.32;
   player.legs.forEach(leg=>{
     const sign=leg.sign,footZ=runIntensity?(-sign*stride): (hitter&&phase>5.55&&phase<5.78?(sign>0?.30:-.15):.05);
     const x=sign*feetSpread;
-    const hip=new THREE.Vector3(sign*.17,1.02-crouch,0);
+    const hip=new THREE.Vector3(sign*.17,1.02-crouch,passDip*.11);
     const foot=new THREE.Vector3(x,.12,footZ-.09);
-    const knee=new THREE.Vector3(sign*(feetSpread+.012),.54-crouch*.28,footZ*.45-.12);
+    // Knees advance over the toes while the hips drop into a receiving squat.
+    const knee=new THREE.Vector3(sign*(feetSpread+.012),.54-crouch*.32,footZ*.45-.12-passDip*.38);
     if(jump>.06){knee.y=.57-crouch*.2;knee.z+=.22;foot.z+=.26;foot.y+=Math.sin(clamp01(jump/.75)*Math.PI)*.1}
     stretch(leg.thigh,hip,knee);stretch(leg.shin,knee,foot);
     leg.knee.position.copy(knee);leg.ankle.position.copy(foot);
@@ -210,7 +227,8 @@ function posePlayer(player,position,phase,role){
   });
   let armPos;
   if(hitter){
-    const rec=smoothBetween(phase,.17,.82)*(1-smoothBetween(phase,1.08,1.4));
+    const rec=smoothBetween(phase,.16,.78)*(1-smoothBetween(phase,1.08,1.38));
+    player.clasp.visible=rec>.55;
     armPos=[-1,1].map(sign=>blendPose(armRun(sign,runCycle*runIntensity),armReceive(sign),rec));
     if(phase>4.40){const plant=smoothBetween(phase,5.34,5.63);
       armPos=[-1,1].map(sign=>blendPose(armRun(sign,runCycle*runIntensity),armPlant(sign),plant));
